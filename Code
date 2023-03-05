@@ -1,0 +1,45 @@
+import requests
+import threading
+
+# Replace these with your own Twitch username and OAuth token
+username = 'your_username'
+oauth_token = 'oauth:your_oauth_token'
+
+# List of Twitch usernames to follow
+users_to_follow = ['user1', 'user2', 'user3']
+
+# List of proxies to use
+proxies = ['http://proxy1:port', 'http://proxy2:port']
+
+def follow_user(user):
+    url = f'https://api.twitch.tv/kraken/users/{username}/follows/channels/{user}'
+    headers = {
+        'Client-ID': 'your_client_id',
+        'Accept': 'application/vnd.twitchtv.v5+json',
+        'Authorization': f'OAuth {oauth_token}'
+    }
+    proxy = None
+    
+    # Use proxies in a round-robin fashion
+    if len(proxies) > 0:
+        proxy = {'http': proxies.pop(0)}
+        proxies.append(proxy['http'])
+        
+    # Send the follow request
+    try:
+        response = requests.put(url, headers=headers, proxies=proxy)
+        response.raise_for_status()
+        print(f'Successfully followed {user}!')
+    except requests.exceptions.RequestException as e:
+        print(f'Failed to follow {user}: {e}')
+
+# Create a thread for each user to follow
+threads = []
+for user in users_to_follow:
+    thread = threading.Thread(target=follow_user, args=(user,))
+    threads.append(thread)
+    thread.start()
+
+# Wait for all threads to finish
+for thread in threads:
+    thread.join()
